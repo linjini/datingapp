@@ -1,31 +1,48 @@
-using API.Data;
-using API.Entities;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using API.Data;
+using API.Entities;
 
 namespace API.Controllers
 {
     [Authorize]
-    public class MembersController(AppDbContext context) : BaseApiController
+    public class MembersController(
+        [FromServices] AppDbContext context)
+        : BaseApiController
     {
         [AllowAnonymous]
-        [HttpGet] // GET: api/Members
+        [HttpGet]
         public async Task<ActionResult<IReadOnlyList<AppUser>>> GetMembers()
         {
-            var members = await context.Users.ToListAsync();
+            ActionResult<IReadOnlyList<AppUser>> result;
 
-            return Ok(members);
+            // 從資料庫中獲取所有用戶
+            List<AppUser> members = await context.Users.ToListAsync();
+
+            result = Ok(members);
+
+            return result;
         }
 
-        [HttpGet("{id}")] // GET: api/Members/{id}
-        public async Task<ActionResult<AppUser>> GetMember(string id)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<AppUser>> GetMember([FromRoute] string id)
         {
-            var member = await context.Users.FindAsync(id);
+            ActionResult<AppUser> result;
 
-            if (member == null) return NotFound();
+            // 從資料庫中根據提供的 id 查找用戶
+            AppUser? member = await context.Users.FindAsync(id);
 
-            return Ok(member);
+            if (member == null)
+            {
+                result = NotFound("Member not found");
+            }
+            else
+            {
+                result = Ok(member);
+            }
+
+            return result;
         }
     }
 }
